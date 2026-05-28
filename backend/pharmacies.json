@@ -1,0 +1,159 @@
+[
+  {
+    "id": 1779880703609,
+    "name": "Apollo Pharmacy",
+    "medicines": [
+      {
+        "id": 1779880722991,
+        "name": "crocin",
+        "price": 100,
+        "quantity": 50
+      },
+      {
+        "id": 1779880757166,
+        "name": "paracetamol",
+        "price": 49,
+        "quantity": 40
+      },
+      {
+        "id": 1779881543068,
+        "name": "crocin",
+        "price": 100,
+        "quantity": 50
+      },
+      {
+        "id": 1779882773208,
+        "name": "Paracetamol",
+        "price": 100,
+        "quantity": 20
+      },
+      {
+        "id": 1779897124789,
+        "name": "Paracetamol",
+        "price": 100,
+        "quantity": 20
+      },
+      {
+        "id": 1779897558064,
+        "name": "Crocin",
+        "price": 50,
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "id": 1779880741740,
+    "name": "Apollo Pharmacy",
+    "medicines": []
+  },
+  {
+    "id": 1779881323936,
+    "name": "Medicare",
+    "medicines": [
+      {
+        "id": 1779881329862,
+        "name": "crocin",
+        "price": 190,
+        "quantity": 40
+      },
+      {
+        "id": 1779882088805,
+        "name": "crocin",
+        "price": 100,
+        "quantity": 50
+      }
+    ]
+  },
+  {
+    "id": 1779881528173,
+    "name": "Apollo Pharmacy",
+    "medicines": []
+  },
+  {
+    "id": 1779882080489,
+    "name": "Medicare",
+    "medicines": []
+  },
+  {
+    "id": 1779882748691,
+    "name": "Apollo Pharmacy",
+    "medicines": []
+  },
+  {
+    "id": 1779882996126,
+    "name": "Apollo Pharmacy",
+    "medicines": [
+      {
+        "id": 1779883012137,
+        "name": "Paracetamol",
+        "price": 100,
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "id": 1779897543062,
+    "name": "Apollo Pharmacy",
+    "medicines": []
+  },
+  {
+    "id": 1779897921063,
+    "name": "Apollo",
+    "medicines": [
+      {
+        "id": 1779897940481,
+        "name": "Paracetamol",
+        "price": 50,
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "id": 1779899275486,
+    "name": "Apollo",
+    "medicines": [
+      {
+        "id": 1779899291962,
+        "name": "crocin",
+        "price": 50,
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "id": 1779899956454,
+    "name": "Apollo Pharmacy",
+    "medicines": [
+      {
+        "id": 1779899974161,
+        "name": "Paracetamol",
+        "price": 20,
+        "quantity": 50
+      }
+    ]
+  },
+  {
+    "id": 1779900203259,
+    "name": "Test Pharmacy",
+    "medicines": [
+      {
+        "id": 1779900218991,
+        "name": "Paracetamol",
+        "price": 50,
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "id": 1779900462671,
+    "name": "Medicare medicine",
+    "medicines": [
+      {
+        "id": 1779900493393,
+        "name": "mefthal spas",
+        "price": 50,
+        "quantity": 100
+      }
+    ]
+  }
+]

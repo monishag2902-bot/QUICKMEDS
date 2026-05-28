@@ -6,22 +6,25 @@ function DeliveryModule() {
 
   const getPath = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/shortest-path");
-      console.log(res.data); // DEBUG
-      setResult(res.data);
+      const res = await axios.get("http://localhost:5000/nearestPharmacy");
+
+      if (res.data.success) {
+        setResult(`Nearest Pharmacy: ${res.data.pharmacy.name}`);
+      }
     } catch (err) {
-      alert("Error fetching path");
       console.log(err);
+
+      setResult("Error fetching route");
     }
   };
 
   return (
-    <div>
+    <div className="card">
       <h2>🚚 Delivery Module</h2>
 
       <button onClick={getPath}>Find Shortest Path</button>
 
-      {result && <p>{result}</p>}
+      <h3>{result}</h3>
     </div>
   );
 }
