@@ -35,6 +35,24 @@ app.get("/", (req, res) => {
 });
 
 // ======================================
+// GET USERS
+// ======================================
+
+app.get("/users", (req, res) => {
+  const sql = "SELECT * FROM users";
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log(err);
+
+      return res.json([]);
+    }
+
+    res.json(result);
+  });
+});
+
+// ======================================
 // REGISTER
 // ======================================
 
@@ -46,11 +64,18 @@ app.post("/register", (req, res) => {
   db.query(checkSql, [email], (err, result) => {
     if (err) {
       console.log(err);
-      return res.json({ success: false, message: "Database Error" });
+
+      return res.json({
+        success: false,
+        message: "Database error",
+      });
     }
 
     if (result.length > 0) {
-      return res.json({ success: false, message: "User already exists" });
+      return res.json({
+        success: false,
+        message: "User already exists",
+      });
     }
 
     const sql = "INSERT INTO users(name,email,password) VALUES(?,?,?)";
@@ -58,13 +83,21 @@ app.post("/register", (req, res) => {
     db.query(sql, [name, email, password], (err, result) => {
       if (err) {
         console.log(err);
-        return res.json({ success: false, message: "Registration Failed" });
+
+        return res.json({
+          success: false,
+          message: "Registration failed",
+        });
       }
 
       res.json({
         success: true,
-        message: "Registration Successful",
-        data: { name, email },
+        message: "Registration successful",
+
+        data: {
+          name,
+          email,
+        },
       });
     });
   });
@@ -82,14 +115,77 @@ app.post("/login", (req, res) => {
   db.query(sql, [email, password], (err, result) => {
     if (err) {
       console.log(err);
-      return res.json({ success: false, message: "Database Error" });
+
+      return res.json({
+        success: false,
+        message: "Database error",
+      });
     }
 
     if (result.length > 0) {
-      res.json({ success: true, message: "Login Successful", data: result[0] });
+      res.json({
+        success: true,
+        message: "Login successful",
+        data: result[0],
+      });
     } else {
-      res.json({ success: false, message: "Invalid Email or Password" });
+      res.json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
+  });
+});
+
+// ======================================
+// GET PHARMACIES
+// ======================================
+
+app.get("/pharmacies", (req, res) => {
+  const sql = `
+    SELECT
+      pharmacies.id,
+      pharmacies.name,
+      medicines.id AS medicineId,
+      medicines.name AS medicineName,
+      medicines.price,
+      medicines.quantity
+
+    FROM pharmacies
+
+    LEFT JOIN medicines
+    ON pharmacies.id = medicines.pharmacyId
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log("PHARMACY FETCH ERROR:", err);
+
+      return res.json([]);
+    }
+
+    const pharmaciesMap = {};
+
+    result.forEach((row) => {
+      if (!pharmaciesMap[row.id]) {
+        pharmaciesMap[row.id] = {
+          id: row.id,
+          name: row.name,
+          medicines: [],
+        };
+      }
+
+      if (row.medicineId) {
+        pharmaciesMap[row.id].medicines.push({
+          id: row.medicineId,
+          name: row.medicineName,
+          price: row.price,
+          quantity: row.quantity,
+        });
+      }
+    });
+
+    res.json(Object.values(pharmaciesMap));
   });
 });
 
@@ -105,10 +201,17 @@ app.post("/addPharmacy", (req, res) => {
   db.query(sql, [name], (err, result) => {
     if (err) {
       console.log(err);
-      return res.json({ success: false, message: "Error Adding Pharmacy" });
+
+      return res.json({
+        success: false,
+        message: "Error adding pharmacy",
+      });
     }
 
-    res.json({ success: true, message: "Pharmacy Added Successfully" });
+    res.json({
+      success: true,
+      message: "Pharmacy added successfully",
+    });
   });
 });
 
@@ -120,17 +223,25 @@ app.post("/addMedicine", (req, res) => {
   const { pharmacyId, name, price, quantity } = req.body;
 
   const sql = `
-    INSERT INTO medicines (pharmacyId, name, price, quantity)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO medicines
+    (pharmacyId,name,price,quantity)
+    VALUES(?,?,?,?)
   `;
 
   db.query(sql, [pharmacyId, name, price, quantity], (err, result) => {
     if (err) {
       console.log(err);
-      return res.json({ success: false, message: "Error Adding Medicine" });
+
+      return res.json({
+        success: false,
+        message: "Error adding medicine",
+      });
     }
 
-    res.json({ success: true, message: "Medicine Added Successfully" });
+    res.json({
+      success: true,
+      message: "Medicine added successfully",
+    });
   });
 });
 
@@ -140,14 +251,19 @@ app.post("/addMedicine", (req, res) => {
 
 app.get("/medicines", (req, res) => {
   const sql = `
-    SELECT medicines.*, pharmacies.name AS pharmacyName
+    SELECT medicines.*,
+           pharmacies.name AS pharmacyName
+
     FROM medicines
-    JOIN pharmacies ON medicines.pharmacyId = pharmacies.id
+
+    JOIN pharmacies
+    ON medicines.pharmacyId = pharmacies.id
   `;
 
   db.query(sql, (err, result) => {
     if (err) {
       console.log(err);
+
       return res.json([]);
     }
 
@@ -156,132 +272,47 @@ app.get("/medicines", (req, res) => {
 });
 
 // ======================================
-// PLACE ORDER  ← FIXED
+// PLACE ORDER
 // ======================================
 
 app.post("/placeOrder", (req, res) => {
   const { medicineName, quantity, userEmail } = req.body;
 
-  // 1. CHECK MISSING DATA
-  if (!medicineName || !quantity || !userEmail) {
-    return res.json({ success: false, message: "Missing Order Data" });
-  }
+  const price = 100;
 
-  const qty = Number(quantity);
+  const totalPrice = Number(quantity) * price;
 
-  if (isNaN(qty) || qty <= 0) {
-    return res.json({ success: false, message: "Invalid Quantity" });
-  }
+  const sql = `
+    INSERT INTO orders
+    (userId, email, medicineName, quantity, price, totalPrice, status)
 
-  // 2. GET USER ID FROM EMAIL
-  const getUserSql = "SELECT id FROM users WHERE email = ?";
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
 
-  db.query(getUserSql, [userEmail], (err, userResult) => {
+  const values = [
+    1,
+    userEmail,
+    medicineName,
+    Number(quantity),
+    price,
+    totalPrice,
+    "Pending",
+  ];
+
+  db.query(sql, values, (err, result) => {
     if (err) {
-      console.log("USER LOOKUP ERROR:", err);
-      return res.json({
+      console.log("ORDER ERROR:", err);
+
+      return res.status(500).json({
         success: false,
-        message: "Database Error: " + err.message,
+        message: "Order Failed",
       });
     }
 
-    if (userResult.length === 0) {
-      return res.json({ success: false, message: "User not found" });
-    }
-
-    const userId = userResult[0].id;
-
-    // 3. GET MEDICINE PRICE & STOCK
-    const getMedSql = "SELECT * FROM medicines WHERE name = ? LIMIT 1";
-
-    db.query(getMedSql, [medicineName], (err, medResult) => {
-      if (err) {
-        console.log("MEDICINE LOOKUP ERROR:", err);
-        return res.json({
-          success: false,
-          message: "Database Error: " + err.message,
-        });
-      }
-
-      if (medResult.length === 0) {
-        return res.json({ success: false, message: "Medicine not found" });
-      }
-
-      const medicine = medResult[0];
-
-      // 4. CHECK STOCK
-      if (medicine.quantity < qty) {
-        return res.json({
-          success: false,
-          message: `Insufficient stock. Only ${medicine.quantity} units available.`,
-        });
-      }
-
-      const price = medicine.price;
-      const totalPrice = qty * price;
-
-      // 5. INSERT ORDER
-      const orderSql = `
-        INSERT INTO orders
-          (userId, email, medicineName, quantity, price, totalPrice, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      const values = [
-        userId,
-        userEmail,
-        medicineName,
-        qty,
-        price,
-        totalPrice,
-        "Pending",
-      ];
-
-      db.query(orderSql, values, (err, orderResult) => {
-        if (err) {
-          console.log("ORDER INSERT ERROR:", err);
-          return res.json({
-            success: false,
-            message: "Order Failed: " + err.message,
-          });
-        }
-
-        // 6. REDUCE MEDICINE STOCK
-        const updateStockSql =
-          "UPDATE medicines SET quantity = quantity - ? WHERE name = ?";
-
-        db.query(updateStockSql, [qty, medicineName], (err) => {
-          if (err) {
-            console.log("STOCK UPDATE ERROR:", err);
-          }
-
-          res.json({ success: true, message: "Order Placed Successfully" });
-        });
-      });
+    res.json({
+      success: true,
+      message: "Order placed successfully",
     });
-  });
-});
-
-// ======================================
-// GET ORDERS (for user)
-// ======================================
-
-app.get("/myOrders", (req, res) => {
-  const { email } = req.query;
-
-  if (!email) {
-    return res.json({ success: false, message: "Email required" });
-  }
-
-  const sql = "SELECT * FROM orders WHERE email = ? ORDER BY id DESC";
-
-  db.query(sql, [email], (err, result) => {
-    if (err) {
-      console.log(err);
-      return res.json({ success: false, message: "Database Error" });
-    }
-
-    res.json({ success: true, data: result });
   });
 });
 
@@ -291,39 +322,62 @@ app.get("/myOrders", (req, res) => {
 
 app.get("/analytics", (req, res) => {
   const usersSql = "SELECT COUNT(*) AS totalUsers FROM users";
+
   const medicinesSql = "SELECT COUNT(*) AS totalMedicines FROM medicines";
+
   const pharmaciesSql = "SELECT COUNT(*) AS totalPharmacies FROM pharmacies";
+
   const ordersSql = "SELECT COUNT(*) AS totalOrders FROM orders";
 
   db.query(usersSql, (err1, usersResult) => {
     if (err1) {
       console.log(err1);
-      return res.json({ success: false });
+
+      return res.status(500).json({
+        success: false,
+        message: "Users query failed",
+      });
     }
 
     db.query(medicinesSql, (err2, medicinesResult) => {
       if (err2) {
         console.log(err2);
-        return res.json({ success: false });
+
+        return res.status(500).json({
+          success: false,
+          message: "Medicines query failed",
+        });
       }
 
       db.query(pharmaciesSql, (err3, pharmaciesResult) => {
         if (err3) {
           console.log(err3);
-          return res.json({ success: false });
+
+          return res.status(500).json({
+            success: false,
+            message: "Pharmacies query failed",
+          });
         }
 
         db.query(ordersSql, (err4, ordersResult) => {
           if (err4) {
             console.log(err4);
-            return res.json({ success: false });
+
+            return res.status(500).json({
+              success: false,
+              message: "Orders query failed",
+            });
           }
 
           res.json({
             success: true,
+
             totalUsers: usersResult[0].totalUsers,
+
             totalMedicines: medicinesResult[0].totalMedicines,
+
             totalPharmacies: pharmaciesResult[0].totalPharmacies,
+
             totalOrders: ordersResult[0].totalOrders,
           });
         });
@@ -333,11 +387,17 @@ app.get("/analytics", (req, res) => {
 });
 
 // ======================================
-// DELIVERY MODULE
+// DELIVERY ROUTE
 // ======================================
 
 app.get("/nearestPharmacy", (req, res) => {
-  res.json({ success: true, pharmacy: { name: "Apollo Pharmacy" } });
+  res.json({
+    success: true,
+
+    pharmacy: {
+      name: "Apollo Pharmacy",
+    },
+  });
 });
 
 // ======================================

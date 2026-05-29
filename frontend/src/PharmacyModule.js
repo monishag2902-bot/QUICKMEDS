@@ -2,18 +2,26 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 function PharmacyModule() {
-  const [pharmacyName, setPharmacyName] = useState("");
-  const [medicineName, setMedicineName] = useState("");
-  const [price, setPrice] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [selectedPharmacy, setSelectedPharmacy] = useState("");
-
   const [pharmacies, setPharmacies] = useState([]);
+
+  const [pharmacyName, setPharmacyName] = useState("");
+
+  const [medicineData, setMedicineData] = useState({
+    pharmacyId: "",
+    name: "",
+    price: "",
+    quantity: "",
+  });
+
   const [message, setMessage] = useState("");
 
-  // =====================================
+  // ======================================
   // FETCH PHARMACIES
-  // =====================================
+  // ======================================
+
+  useEffect(() => {
+    fetchPharmacies();
+  }, []);
 
   const fetchPharmacies = async () => {
     try {
@@ -25,17 +33,14 @@ function PharmacyModule() {
     }
   };
 
-  useEffect(() => {
-    fetchPharmacies();
-  }, []);
-
-  // =====================================
+  // ======================================
   // ADD PHARMACY
-  // =====================================
+  // ======================================
 
   const addPharmacy = async () => {
     if (!pharmacyName) {
-      setMessage("Enter pharmacy name");
+      alert("Enter pharmacy name");
+
       return;
     }
 
@@ -45,144 +50,184 @@ function PharmacyModule() {
       });
 
       if (res.data.success) {
-        setMessage(res.data.message);
+        setMessage("Pharmacy Added Successfully");
 
         setPharmacyName("");
 
+        // REFRESH DATA
         fetchPharmacies();
       } else {
-        setMessage(res.data.message);
+        setMessage("Error adding pharmacy");
       }
     } catch (err) {
       console.log(err);
 
-      setMessage("Error adding pharmacy");
+      setMessage("Server Error");
     }
   };
 
-  // =====================================
+  // ======================================
   // ADD MEDICINE
-  // =====================================
+  // ======================================
 
   const addMedicine = async () => {
-    if (!selectedPharmacy || !medicineName || !price || !quantity) {
-      setMessage("Fill all medicine fields");
-      return;
-    }
-
     try {
-      const res = await axios.post("http://localhost:5000/addMedicine", {
-        pharmacyId: selectedPharmacy,
-        name: medicineName,
-        price: price,
-        quantity: quantity,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/addMedicine",
+        medicineData,
+      );
 
       if (res.data.success) {
-        setMessage(res.data.message);
+        setMessage("Medicine Added Successfully");
 
-        setMedicineName("");
-        setPrice("");
-        setQuantity("");
+        setMedicineData({
+          pharmacyId: "",
+          name: "",
+          price: "",
+          quantity: "",
+        });
 
+        // REFRESH
         fetchPharmacies();
       } else {
-        setMessage(res.data.message);
+        setMessage("Error adding medicine");
       }
     } catch (err) {
       console.log(err);
 
-      setMessage("Error adding medicine");
+      setMessage("Server Error");
     }
   };
 
   return (
     <div>
-      <h2>🏥 Add Pharmacy</h2>
+      {/* ADD PHARMACY */}
 
-      <input
-        type="text"
-        placeholder="Pharmacy Name"
-        value={pharmacyName}
-        onChange={(e) => setPharmacyName(e.target.value)}
-      />
+      <div className="card">
+        <h2>🏥 Add Pharmacy</h2>
 
-      <button onClick={addPharmacy}>Add Pharmacy</button>
+        <input
+          type="text"
+          placeholder="Pharmacy Name"
+          value={pharmacyName}
+          onChange={(e) => setPharmacyName(e.target.value)}
+        />
 
-      <h2>💊 Add Medicine</h2>
+        <button onClick={addPharmacy}>Add Pharmacy</button>
+      </div>
 
-      <select
-        value={selectedPharmacy}
-        onChange={(e) => setSelectedPharmacy(e.target.value)}
-      >
-        <option value="">Select Pharmacy</option>
+      {/* ADD MEDICINE */}
 
-        {pharmacies.map((pharmacy) => (
-          <option key={pharmacy.id} value={pharmacy.id}>
-            {pharmacy.name}
-          </option>
-        ))}
-      </select>
+      <div className="card">
+        <h2>💊 Add Medicine</h2>
 
-      <input
-        type="text"
-        placeholder="Medicine Name"
-        value={medicineName}
-        onChange={(e) => setMedicineName(e.target.value)}
-      />
+        <select
+          value={medicineData.pharmacyId}
+          onChange={(e) =>
+            setMedicineData({
+              ...medicineData,
+              pharmacyId: e.target.value,
+            })
+          }
+        >
+          <option value="">Select Pharmacy</option>
 
-      <input
-        type="number"
-        placeholder="Price"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
+          {pharmacies.map((pharmacy) => (
+            <option key={pharmacy.id} value={pharmacy.id}>
+              {pharmacy.name}
+            </option>
+          ))}
+        </select>
 
-      <input
-        type="number"
-        placeholder="Quantity"
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Medicine Name"
+          value={medicineData.name}
+          onChange={(e) =>
+            setMedicineData({
+              ...medicineData,
+              name: e.target.value,
+            })
+          }
+        />
 
-      <button onClick={addMedicine}>Add Medicine</button>
+        <input
+          type="number"
+          placeholder="Price"
+          value={medicineData.price}
+          onChange={(e) =>
+            setMedicineData({
+              ...medicineData,
+              price: e.target.value,
+            })
+          }
+        />
 
-      <h2>📋 Pharmacy Inventory</h2>
+        <input
+          type="number"
+          placeholder="Quantity"
+          value={medicineData.quantity}
+          onChange={(e) =>
+            setMedicineData({
+              ...medicineData,
+              quantity: e.target.value,
+            })
+          }
+        />
 
-      {pharmacies.length === 0 ? (
-        <p>No pharmacies added</p>
-      ) : (
-        pharmacies.map((pharmacy) => (
-          <div
-            key={pharmacy.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <h3>🏪 {pharmacy.name}</h3>
+        <button onClick={addMedicine}>Add Medicine</button>
+      </div>
 
-            {pharmacy.medicines && pharmacy.medicines.length > 0 ? (
-              pharmacy.medicines.map((medicine) => (
-                <div key={medicine.id}>
-                  <p>💊 {medicine.name}</p>
+      {/* INVENTORY */}
 
-                  <p>Price: ₹{medicine.price}</p>
+      <div className="card">
+        <h2>📋 Pharmacy Inventory</h2>
 
-                  <p>Quantity: {medicine.quantity}</p>
+        {pharmacies.length === 0 ? (
+          <p>No pharmacies added</p>
+        ) : (
+          pharmacies.map((pharmacy) => (
+            <div
+              key={pharmacy.id}
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <h3>{pharmacy.name}</h3>
 
-                  <hr />
-                </div>
-              ))
-            ) : (
-              <p>No medicines added</p>
-            )}
-          </div>
-        ))
-      )}
+              {pharmacy.medicines.length === 0 ? (
+                <p>No medicines added</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
 
-      <h3>{message}</h3>
+                      <th>Price</th>
+
+                      <th>Quantity</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pharmacy.medicines.map((med) => (
+                      <tr key={med.id}>
+                        <td>{med.name}</td>
+
+                        <td>₹{med.price}</td>
+
+                        <td>{med.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ))
+        )}
+
+        {message && <h3>{message}</h3>}
+      </div>
     </div>
   );
 }

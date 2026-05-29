@@ -14,9 +14,15 @@ function UserModule({ currentUser, onLogin }) {
 
   const [medicines, setMedicines] = useState([]);
 
+  const [userOrders, setUserOrders] = useState([]);
+
   const [cartItem, setCartItem] = useState(null);
 
   const [quantity, setQuantity] = useState(1);
+
+  const [message, setMessage] = useState("");
+
+  const [messageType, setMessageType] = useState("");
 
   // =====================================
   // FETCH MEDICINES
@@ -37,7 +43,7 @@ function UserModule({ currentUser, onLogin }) {
   };
 
   // =====================================
-  // LOGIN / REGISTER
+  // AUTH
   // =====================================
 
   const handleAuth = async () => {
@@ -49,28 +55,33 @@ function UserModule({ currentUser, onLogin }) {
 
       const res = await axios.post(endpoint, formData);
 
+      // SUCCESS
+
       if (res.data.success) {
+        setMessage(res.data.message || `${authMode} successful`);
+
+        setMessageType("success");
+
         // LOGIN
 
         if (authMode === "login") {
           onLogin(res.data.data);
 
           setView("dashboard");
-        }
-
-        // REGISTER
-        else {
-          alert("Registration Successful");
-
+        } else {
           setAuthMode("login");
         }
       } else {
-        alert(res.data.message);
+        setMessage(res.data.message || "Authentication Failed");
+
+        setMessageType("error");
       }
     } catch (err) {
       console.log(err);
 
-      alert("Server Error");
+      setMessage("Server Error");
+
+      setMessageType("error");
     }
   };
 
@@ -90,49 +101,78 @@ function UserModule({ currentUser, onLogin }) {
 
   const handlePlaceOrder = async () => {
     try {
-      if (!cartItem) {
-        alert("No Medicine Selected");
+      // LOGIN CHECK
+
+      if (!currentUser) {
+        alert("Please Login First");
+
         return;
       }
+
+      // CART CHECK
+
+      if (!cartItem) {
+        alert("No medicine selected");
+
+        return;
+      }
+
+      // API CALL
 
       const res = await axios.post("http://localhost:5000/placeOrder", {
         medicineName: cartItem.name,
 
         quantity: Number(quantity),
 
-        userEmail:
-          currentUser && currentUser.email
-            ? currentUser.email
-            : "demo@gmail.com",
+        userEmail: currentUser?.email || "",
       });
+
+      // SUCCESS
 
       if (res.data.success) {
         alert("Order Placed Successfully ✅");
 
+        // SAVE ORDER
+
+        setUserOrders([
+          ...userOrders,
+          {
+            medicineName: cartItem.name,
+
+            quantity: quantity,
+          },
+        ]);
+
+        // CLEAR CART
+
         setCartItem(null);
       } else {
-        alert(res.data.message);
+        alert(res.data.message || "Order Failed");
       }
     } catch (err) {
-      console.log(err);
+      console.log("ORDER ERROR:", err);
 
       alert("Server Error");
     }
   };
 
   // =====================================
-  // AUTH PAGE
+  // AUTH VIEW
   // =====================================
 
   if (view === "auth") {
     return (
       <div className="card">
-        <h2>{authMode === "login" ? "Login" : "Register"}</h2>
+        <h2>
+          {authMode === "login" ? "Welcome Back 👋" : "Create Account 🚀"}
+        </h2>
 
         {/* NAME */}
 
         {authMode === "register" && (
-          <div>
+          <div className="form-group">
+            <label>Name</label>
+
             <input
               type="text"
               placeholder="Enter Name"
@@ -149,7 +189,9 @@ function UserModule({ currentUser, onLogin }) {
 
         {/* EMAIL */}
 
-        <div>
+        <div className="form-group">
+          <label>Email</label>
+
           <input
             type="email"
             placeholder="Enter Email"
@@ -165,7 +207,9 @@ function UserModule({ currentUser, onLogin }) {
 
         {/* PASSWORD */}
 
-        <div>
+        <div className="form-group">
+          <label>Password</label>
+
           <input
             type="password"
             placeholder="Enter Password"
@@ -185,18 +229,32 @@ function UserModule({ currentUser, onLogin }) {
           {authMode === "login" ? "Login" : "Register"}
         </button>
 
-        <br />
-        <br />
+        {/* TOGGLE */}
 
-        {/* SWITCH BUTTON */}
-
-        <button
-          onClick={() =>
-            setAuthMode(authMode === "login" ? "register" : "login")
-          }
+        <p
+          style={{
+            marginTop: 15,
+          }}
         >
-          Switch To {authMode === "login" ? "Register" : "Login"}
-        </button>
+          {authMode === "login"
+            ? "Don't have account?"
+            : "Already have account?"}
+
+          <button
+            className="toggle-btn"
+            onClick={() => {
+              setAuthMode(authMode === "login" ? "register" : "login");
+
+              setMessage("");
+            }}
+          >
+            {authMode === "login" ? " Register" : " Login"}
+          </button>
+        </p>
+
+        {/* MESSAGE */}
+
+        {message && <div className={`alert ${messageType}`}>{message}</div>}
       </div>
     );
   }
@@ -207,10 +265,8 @@ function UserModule({ currentUser, onLogin }) {
 
   return (
     <div>
-      {/* WELCOME */}
-
       <div className="card">
-        <h2>Welcome {currentUser ? currentUser.name : "User"}</h2>
+        <h2>Welcome {currentUser?.name}</h2>
       </div>
 
       {/* MEDICINES */}
@@ -225,9 +281,13 @@ function UserModule({ currentUser, onLogin }) {
             <thead>
               <tr>
                 <th>Name</th>
+
                 <th>Price</th>
+
                 <th>Quantity</th>
+
                 <th>Pharmacy</th>
+
                 <th>Action</th>
               </tr>
             </thead>
@@ -253,7 +313,7 @@ function UserModule({ currentUser, onLogin }) {
         )}
       </div>
 
-      {/* ORDER BOX */}
+      {/* CART */}
 
       {cartItem && (
         <div className="card">
@@ -265,10 +325,26 @@ function UserModule({ currentUser, onLogin }) {
             onChange={(e) => setQuantity(e.target.value)}
           />
 
-          <br />
-          <br />
-
           <button onClick={handlePlaceOrder}>Place Order</button>
+        </div>
+      )}
+
+      {/* USER ORDERS */}
+
+      {userOrders.length > 0 && (
+        <div className="card">
+          <h3>🧾 Your Orders</h3>
+
+          <ul>
+            {userOrders.map((order, index) => (
+              <li key={index}>
+                {order.medicineName}
+                {" - "}
+                Quantity:
+                {order.quantity}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
